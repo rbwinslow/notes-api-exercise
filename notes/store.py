@@ -1,6 +1,8 @@
 import os
 from sqlite3 import connect
 
+import re
+
 
 class NotesStore:
 
@@ -57,6 +59,14 @@ class NotesStore:
         self._clean_up_tags(cursor, id)
         cursor.execute('DELETE FROM notes WHERE id = ?', (id,))
         self.sql.commit()
+
+    def match_content(self, term):
+        root = term.rstrip('*')
+        wildcard = '%{0}%'.format(root).lower()
+        raw = [r[0] for r in self.sql.cursor().execute('SELECT content FROM notes WHERE LOWER(content) LIKE ?',
+                                                       (wildcard,))]
+        prog = re.compile(r'{0}{1}( |$)'.format(root, r'\w*' if term.endswith('*') else ''), re.IGNORECASE)
+        return [s for s in raw if prog.search(s)]
 
     def _clean_up_tags(self, cursor, id):
         cursor.execute('DELETE FROM tags '

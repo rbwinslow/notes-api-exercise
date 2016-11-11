@@ -22,7 +22,11 @@ To run unit tests:
 
 To execute commands as described below on any Linux, Unix or OS X shell:
 
-    ./cli.py
+    ./notesapp.py
+    
+      ... or ...
+      
+    cat some_file.txt | ./notesapp.py
 
 The script's execute attribute should have been set by git. If you need me to
 make it work on Windows, write me and I'll take a stab

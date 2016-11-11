@@ -13,7 +13,7 @@ def clear_db():
 
 @fixture()
 def mock_api(mocker):
-    api_mock = mocker.Mock(**{m: mocker.Mock() for m in ('create',)})
+    api_mock = mocker.Mock(**{m: mocker.Mock() for m in ('create', 'update', 'delete', 'search')})
     mocker.patch('notesapp.NotesAPI', return_value=api_mock)
     return api_mock
 

@@ -43,3 +43,15 @@ def test_delete_removes_note(clear_db):
 
     with notes_store_session() as store:
         assert len(list(store.notes())) == 0
+
+
+def test_search_with_no_tag_prefix_matches_exact_words_in_content(clear_db):
+    clear_db()
+
+    api = NotesAPI()
+    api.create('{"id": "1", "content": "Sweet Potato Pie"}')
+    api.create('{"id": "2", "content": "Mash four potatoes together"}')
+    actual = api.search('potato')
+
+    assert len(actual) == 1
+    assert actual[0] == 'Sweet Potato Pie'

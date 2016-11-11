@@ -16,3 +16,7 @@ class NotesAPI:
     def delete(self, id):
         with notes_store_session() as store:
             store.delete_note(id)
+
+    def search(self, terms):
+        with notes_store_session() as store:
+            return store.match_content(terms)

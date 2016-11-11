@@ -155,3 +155,28 @@ def test_store_delete_cleans_up_tags(clear_db, notes_cursor):
     assert len(links) == 1
     assert links[0][0] == 99
     assert links[0][1] == 'foo'
+
+
+def test_store_matches_an_exact_word_in_content_without_case_sensitivity(clear_db):
+    expected = 'Sweet Potato Pie'
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': 1, 'content': expected})
+        store.update_note({'id': 2, 'content': 'Mash four potatoes together'})
+        actual = store.match_content('potato')
+
+    assert len(actual) == 1
+    assert actual[0] == expected
+
+
+def test_store_matches_a_word_prefix_in_content(clear_db):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': 1, 'content': 'Pot: Kettle; Kettle: Pot'})
+        store.update_note({'id': 2, 'content': 'Sweet Potato Pie'})
+        store.update_note({'id': 3, 'content': 'Does Not Matter'})
+        actual = store.match_content('pOT*')
+
+    assert len(set(actual)) == 2

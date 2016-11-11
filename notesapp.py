@@ -15,7 +15,10 @@ def main():
 def _api_call(api):
     command = stdin.readline().rstrip().lower()
     if command:
-        getattr(api, command)(stdin.readline().rstrip())
+        result = getattr(api, command)(stdin.readline().rstrip())
+        if command == 'search':
+            for note in result:
+                print(note)
         return True
 
 
