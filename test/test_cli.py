@@ -1,17 +1,35 @@
 
 import sys
 
+from mock import call
+
 sys.path.append('..')
-from cli import main
+from notesapp import main
 
 
-def test_cli_executes_create_command(mocker):
+def test_cli_executes_create_command(clear_db, mock_api, mock_stdin):
     expected_json = '{"id": "2", "content": "Hello, world!"}'
+    mock_stdin(['create', expected_json])
 
-    (mocker.patch('cli.stdin')).readline = mocker.MagicMock(side_effect=['create\n', '{0}\n'.format(expected_json)])
-    mock_create = mocker.Mock()
-    mocker.patch('cli.NotesAPI', return_value=(mocker.Mock(create=mock_create)))
-
+    clear_db()
     main()
 
-    mock_create.assert_called_with(expected_json)
+    mock_api.create.assert_called_with(expected_json)
+
+
+def test_cli_commands_are_case_insensitive(mock_api, mock_stdin):
+    expected_json = '{"id": "4758392"}'
+    mock_stdin(['CREate', expected_json])
+    main()
+    mock_api.create.assert_called_with(expected_json)
+
+
+def test_cli_accepts_multiple_commands(clear_db, mock_api, mock_stdin):
+    expected_first = '{"id": "1"}'
+    expected_second = '{"id": "2"}'
+    mock_stdin(['create', expected_first, 'create', expected_second])
+
+    clear_db()
+    main()
+
+    mock_api.create.assert_has_calls([call(expected_first), call(expected_second)])
