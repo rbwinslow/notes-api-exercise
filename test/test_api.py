@@ -55,3 +55,16 @@ def test_search_with_no_tag_prefix_matches_exact_words_in_content(clear_db):
 
     assert len(actual) == 1
     assert actual[0] == 'Sweet Potato Pie'
+
+
+def test_search_with_combined_content_terms_and_tags_selects_notes_that_satisfy_all_conditions(clear_db):
+    clear_db()
+
+    api = NotesAPI()
+    api.create('{"id": "1", "tag": ["potato", "dinner"], "content": "not a match"}')
+    api.create('{"id": "2", "tag": ["pot", "dinner"], "content": "Give me pancake"}')
+    api.create('{"id": "3", "tag": ["pancake", "dinner"], "content": "cannot find pancake"}')
+    actual = api.search('tag:pot* pan* tag:dinner')
+
+    assert len(actual) == 1
+    assert actual[0] == 'Give me pancake'

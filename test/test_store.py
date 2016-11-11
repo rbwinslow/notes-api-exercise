@@ -164,7 +164,7 @@ def test_store_matches_an_exact_word_in_content_without_case_sensitivity(clear_d
     with notes_store_session() as store:
         store.update_note({'id': 1, 'content': expected})
         store.update_note({'id': 2, 'content': 'Mash four potatoes together'})
-        actual = store.match_notes('potato')
+        actual = store.match_notes(['potato'])
 
     assert len(actual) == 1
     assert actual[0] == expected
@@ -176,7 +176,7 @@ def test_store_matches_a_word_prefix_in_content(clear_db):
         store.update_note({'id': 1, 'content': 'Pot: Kettle; Kettle: Pot'})
         store.update_note({'id': 2, 'content': 'Sweet Potato Pie'})
         store.update_note({'id': 3, 'content': 'Does Not Matter'})
-        actual = store.match_notes('pOT*')
+        actual = store.match_notes(['pOT*'])
 
     assert len(set(actual)) == 2
 
@@ -189,7 +189,59 @@ def test_store_matches_multiple_words_in_content(clear_db):
         store.update_note({'id': 1, 'content': expected})
         store.update_note({'id': 2, 'content': 'potato pancakes'})
         store.update_note({'id': 3, 'content': 'potato'})
-        actual = store.match_notes('PANcake poTATo')
+        actual = store.match_notes(['PANcake', 'poTATo'])
 
     assert len(actual) == 1
     assert actual[0] == expected
+
+
+def test_store_matches_an_exact_tag_name_without_case_sensitivity(clear_db):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': 1, 'tag': ['Potato'], 'content': 'expected'})
+        store.update_note({'id': 2, 'tag': ['potatoes'], 'content': 'not expected'})
+        actual = store.match_notes(tags=['potato'])
+
+    assert len(actual) == 1
+    assert actual[0] == 'expected'
+
+
+def test_store_matches_tag_prefix(clear_db):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': 1, 'tag': ['potato'], 'content': 'one'})
+        store.update_note({'id': 2, 'tag': ['pot'], 'content': 'two'})
+        store.update_note({'id': 3, 'tag': ['pancake'], 'content': 'three'})
+        actual = store.match_notes(tags=['POT*'])
+
+    assert len(set(actual)) == 2
+
+
+def test_store_matches_multiple_tags(clear_db):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': 1, 'tag': ['potato'], 'content': 'one'})
+        store.update_note({'id': 2, 'tag': ['pot', 'pancake'], 'content': 'two'})
+        store.update_note({'id': 3, 'tag': ['potato', 'pancake'], 'content': 'three'})
+        store.update_note({'id': 4, 'tag': ['foobar', 'pancake'], 'content': 'four'})
+        actual = store.match_notes(tags=['pot*', 'pancake'])
+
+    assert len(set(actual)) == 2
+    assert 'two' in actual
+    assert 'three' in actual
+
+
+def test_store_matches_combinations_of_tags_and_content_terms(clear_db):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': 1, 'content': 'pot content'})
+        store.update_note({'id': 2, 'tag': ['pancake'], 'content': 'Potatoes are expected'})
+        store.update_note({'id': 3, 'tag': ['pan'], 'content': 'does not matter'})
+        actual = store.match_notes(terms=['pot*'], tags=['pan*'])
+
+    assert len(set(actual)) == 1
+    assert all('expected' in note for note in actual)
