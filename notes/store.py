@@ -71,7 +71,6 @@ class NotesStore:
     def match_notes(self, terms=None, tags=None):
         term_match_ids = None
         tag_match_ids = None
-        cursor = self.sql.cursor()
 
         if terms:
             term_match_ids = self._notes_matching_all_terms(terms)
@@ -83,10 +82,7 @@ class NotesStore:
             term_match_ids = tag_match_ids
         if tag_match_ids is None:
             tag_match_ids = term_match_ids
-        all_ids = term_match_ids.intersection(tag_match_ids)
-
-        query = 'SELECT content FROM notes WHERE id IN ({0})'.format(','.join(str(id) for id in all_ids))
-        return [row[0] for row in cursor.execute(query)]
+        return list(term_match_ids.intersection(tag_match_ids))
 
 
     def _clean_up_tags(self, cursor, id):

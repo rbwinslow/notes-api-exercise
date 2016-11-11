@@ -17,8 +17,7 @@ def _api_call(api):
     if command:
         result = getattr(api, command)(stdin.readline().rstrip())
         if command == 'search':
-            for note in result:
-                print(note)
+            print(', '.join(str(id) for id in result))
         return True
 
 

@@ -38,10 +38,10 @@ def test_cli_accepts_multiple_commands(clear_db, mock_api, mock_stdin):
 def test_cli_search_command_prints_results_to_stdout(mock_api, mock_stdin, capsys):
     expected_term = 'expected_term'
     mock_stdin(['search', expected_term])
-    mock_api.search.return_value = ['one', 'two']
+    mock_api.search.return_value = [1, 2]
 
     main()
 
     mock_api.search.assert_called_with(expected_term)
     actual, _ = capsys.readouterr()
-    assert actual == 'one\ntwo\n'
+    assert actual == '1, 2\n'
