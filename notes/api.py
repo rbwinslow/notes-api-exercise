@@ -12,3 +12,7 @@ class NotesAPI:
     def update(self, payload):
         with notes_store_session() as store:
             store.update_note(json.loads(payload))
+
+    def delete(self, id):
+        with notes_store_session() as store:
+            store.delete_note(id)

@@ -44,16 +44,25 @@ class NotesStore:
             cursor.execute('UPDATE notes SET content = ? WHERE id = ?', (content, id))
 
         if 'tag' in note_attrs:
-            cursor.execute('DELETE FROM tags '
-                           'WHERE id IN (SELECT tag_id FROM notes_tags WHERE note_id = ?) '
-                           'AND (SELECT COUNT(*) FROM notes_tags WHERE tag_id = id) = 1', (id,))
-            cursor.execute('DELETE FROM notes_tags WHERE note_id = ?', (id,))
+            self._clean_up_tags(cursor, id)
             for tag in note_attrs['tag']:
                 cursor.execute('INSERT INTO tags (value) VALUES (?)', (tag,))
                 cursor.execute('INSERT INTO notes_tags (note_id, tag_id) VALUES (?,?)',
                                (id, cursor.lastrowid))
 
         self.sql.commit()
+
+    def delete_note(self, id):
+        cursor = self.sql.cursor()
+        self._clean_up_tags(cursor, id)
+        cursor.execute('DELETE FROM notes WHERE id = ?', (id,))
+        self.sql.commit()
+
+    def _clean_up_tags(self, cursor, id):
+        cursor.execute('DELETE FROM tags '
+                       'WHERE id IN (SELECT tag_id FROM notes_tags WHERE note_id = ?) '
+                       'AND (SELECT COUNT(*) FROM notes_tags WHERE tag_id = id) = 1', (id,))
+        cursor.execute('DELETE FROM notes_tags WHERE note_id = ?', (id,))
 
 
 class notes_store_session:

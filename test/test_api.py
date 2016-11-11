@@ -32,3 +32,14 @@ def test_update_modifies_database_record_in_place(clear_db):
         all_notes = list(store.notes())
         assert len(all_notes) == 1
         assert all_notes[0]['content'] == 'expected'
+
+
+def test_delete_removes_note(clear_db):
+    clear_db()
+
+    api = NotesAPI()
+    api.create('{"id": "42"}')
+    api.delete('42')
+
+    with notes_store_session() as store:
+        assert len(list(store.notes())) == 0

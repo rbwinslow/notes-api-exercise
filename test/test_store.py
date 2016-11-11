@@ -127,3 +127,31 @@ def test_store_update_deletes_tags_that_are_no_longer_used(clear_db, notes_curso
         store.update_note({'id': '42', 'tag': []})
 
     assert len(list(notes_cursor().execute('SELECT * FROM tags'))) == 0
+
+
+def test_store_delete_removes_note(clear_db, notes_cursor):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': 66})
+        store.delete_note(66)
+
+    assert len(list(notes_cursor().execute('SELECT * FROM notes'))) == 0
+
+
+def test_store_delete_cleans_up_tags(clear_db, notes_cursor):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': 99, 'tag': ['foo']})
+        store.update_note({'id': 100, 'tag': ['foo', 'bar']})
+        store.delete_note(100)
+
+    tags = list(notes_cursor().execute('SELECT value FROM tags'))
+    assert len(tags) == 1
+    assert tags[0][0] == 'foo'
+
+    links = list(notes_cursor().execute('SELECT notes_tags.note_id, tags.value FROM notes_tags, tags WHERE notes_tags.tag_id = tags.id'))
+    assert len(links) == 1
+    assert links[0][0] == 99
+    assert links[0][1] == 'foo'
