@@ -19,4 +19,4 @@ class NotesAPI:
 
     def search(self, terms):
         with notes_store_session() as store:
-            return store.match_content(terms)
+            return store.match_notes(terms)

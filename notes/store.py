@@ -60,13 +60,18 @@ class NotesStore:
         cursor.execute('DELETE FROM notes WHERE id = ?', (id,))
         self.sql.commit()
 
-    def match_content(self, term):
-        root = term.rstrip('*')
-        wildcard = '%{0}%'.format(root).lower()
-        raw = [r[0] for r in self.sql.cursor().execute('SELECT content FROM notes WHERE LOWER(content) LIKE ?',
-                                                       (wildcard,))]
-        prog = re.compile(r'{0}{1}( |$)'.format(root, r'\w*' if term.endswith('*') else ''), re.IGNORECASE)
-        return [s for s in raw if prog.search(s)]
+    def match_notes(self, terms):
+        terms = terms.split()
+        roots = [term.rstrip('*') for term in terms]
+        wildcards = ['%{0}%'.format(root).lower() for root in roots]
+
+        like_clauses = ' AND '.join(['LOWER(content) LIKE ?' for n in range(0, len(wildcards))])
+        query = 'SELECT content FROM notes WHERE {0}'.format(like_clauses)
+        raw = [r[0] for r in self.sql.cursor().execute(query, wildcards)]
+
+        progs = [re.compile(r'{0}{1}( |$)'.format(root, r'\w*' if term.endswith('*') else ''), re.IGNORECASE)
+                 for root in roots]
+        return [s for s in raw if all(prog.search(s) for prog in progs)]
 
     def _clean_up_tags(self, cursor, id):
         cursor.execute('DELETE FROM tags '

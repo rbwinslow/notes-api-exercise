@@ -159,12 +159,12 @@ def test_store_delete_cleans_up_tags(clear_db, notes_cursor):
 
 def test_store_matches_an_exact_word_in_content_without_case_sensitivity(clear_db):
     expected = 'Sweet Potato Pie'
-    clear_db()
 
+    clear_db()
     with notes_store_session() as store:
         store.update_note({'id': 1, 'content': expected})
         store.update_note({'id': 2, 'content': 'Mash four potatoes together'})
-        actual = store.match_content('potato')
+        actual = store.match_notes('potato')
 
     assert len(actual) == 1
     assert actual[0] == expected
@@ -172,11 +172,24 @@ def test_store_matches_an_exact_word_in_content_without_case_sensitivity(clear_d
 
 def test_store_matches_a_word_prefix_in_content(clear_db):
     clear_db()
-
     with notes_store_session() as store:
         store.update_note({'id': 1, 'content': 'Pot: Kettle; Kettle: Pot'})
         store.update_note({'id': 2, 'content': 'Sweet Potato Pie'})
         store.update_note({'id': 3, 'content': 'Does Not Matter'})
-        actual = store.match_content('pOT*')
+        actual = store.match_notes('pOT*')
 
     assert len(set(actual)) == 2
+
+
+def test_store_matches_multiple_words_in_content(clear_db):
+    expected = 'Potato Pancake'
+
+    clear_db()
+    with notes_store_session() as store:
+        store.update_note({'id': 1, 'content': expected})
+        store.update_note({'id': 2, 'content': 'potato pancakes'})
+        store.update_note({'id': 3, 'content': 'potato'})
+        actual = store.match_notes('PANcake poTATo')
+
+    assert len(actual) == 1
+    assert actual[0] == expected
