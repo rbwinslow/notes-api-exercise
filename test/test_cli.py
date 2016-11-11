@@ -45,3 +45,12 @@ def test_cli_search_command_prints_results_to_stdout(mock_api, mock_stdin, capsy
     mock_api.search.assert_called_with(expected_term)
     actual, _ = capsys.readouterr()
     assert actual == '1, 2\n'
+
+
+def test_cli_search_produces_empty_line_when_there_are_no_matches(mock_stdin, capsys):
+    mock_stdin(['search', 'NoWayThisExists'])
+
+    main()
+
+    actual, _ = capsys.readouterr()
+    assert actual == '\n'
