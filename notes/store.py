@@ -33,13 +33,25 @@ class NotesStore:
         return ({'id': row[0], 'value': row[1]} for row in cursor)
 
     def update_note(self, note_attrs):
+        id = note_attrs['id']
+        content = note_attrs['content'] if 'content' in note_attrs else None
+
         cursor = self.sql.cursor()
-        cursor.execute('INSERT INTO notes (id, content) VALUES (?,?)', (note_attrs['id'], note_attrs['content']))
-        if 'tag' in note_attrs and len(note_attrs['tag']) > 0:
+        cursor.execute('SELECT id FROM notes WHERE id = ?', (id,))
+        if not any(cursor):
+            cursor.execute('INSERT INTO notes (id, content) VALUES (?,?)', (id, '' if content is None else content))
+        elif content is not None:
+            cursor.execute('UPDATE notes SET content = ? WHERE id = ?', (content, id))
+
+        if 'tag' in note_attrs:
+            cursor.execute('DELETE FROM tags '
+                           'WHERE id IN (SELECT tag_id FROM notes_tags WHERE note_id = ?) '
+                           'AND (SELECT COUNT(*) FROM notes_tags WHERE tag_id = id) = 1', (id,))
+            cursor.execute('DELETE FROM notes_tags WHERE note_id = ?', (id,))
             for tag in note_attrs['tag']:
                 cursor.execute('INSERT INTO tags (value) VALUES (?)', (tag,))
                 cursor.execute('INSERT INTO notes_tags (note_id, tag_id) VALUES (?,?)',
-                               (note_attrs['id'], cursor.lastrowid))
+                               (id, cursor.lastrowid))
 
         self.sql.commit()
 

@@ -65,3 +65,65 @@ def test_store_update_with_a_tag_creates_a_tag_record(clear_db, notes_cursor):
     assert len(links) == 1
     assert links[0][0] == 123
     assert links[0][1] == tag_id
+
+
+def test_store_update_modifies_existing_record_with_given_id_instead_of_trying_to_insert_new(clear_db, notes_cursor):
+    expected = 'expected content'
+
+    clear_db()
+    with notes_store_session() as store:
+        store.update_note({'id': '2', 'content': 'does not matter'})
+        store.update_note({'id': '2', 'content': expected})
+
+    notes = list(notes_cursor().execute('SELECT * FROM notes'))
+    assert len(notes) == 1
+    assert notes[0][1] == expected
+
+
+def test_store_update_reassigns_tags_when_note_already_exists(clear_db, notes_cursor):
+    expected = 'expected'
+
+    clear_db()
+    with notes_store_session() as store:
+        store.update_note({'id': '42', 'tag': ['foo'], 'content': expected})
+        store.update_note({'id': '42', 'tag': ['bar']})
+
+    actual = next(notes_cursor().execute('SELECT content FROM notes, notes_tags, tags '
+                                         'WHERE notes.id = notes_tags.note_id AND notes_tags.tag_id = tags.id '
+                                         'AND tags.value = "bar"'))
+    assert actual[0] == expected
+
+
+def test_store_update_deletes_tag_relations_between_notes_and_old_tags(clear_db, notes_cursor):
+    clear_db()
+    with notes_store_session() as store:
+        store.update_note({'id': '42', 'tag': ['foo']})
+        store.update_note({'id': '42', 'tag': ['bar']})
+
+    join = list(notes_cursor().execute('SELECT * FROM notes, notes_tags, tags '
+                                       'WHERE notes.id = notes_tags.note_id AND notes_tags.tag_id = tags.id '
+                                       'AND tags.value = "foo"'))
+    assert len(join) == 0
+
+
+def test_store_update_kills_tags_when_tags_attr_empty_list_but_does_nothing_when_no_tags_attr(clear_db, notes_cursor):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': '99', 'tag': ['foo']})
+        store.update_note({'id': '99', 'tag': []})
+        store.update_note({'id': '100', 'tag': ['bar']})
+        store.update_note({'id': '100', 'content': 'does not matter'})
+
+    assert len(list(notes_cursor().execute('SELECT * FROM notes_tags WHERE note_id = 99'))) == 0
+    assert len(list(notes_cursor().execute('SELECT * FROM notes_tags WHERE note_id = 100'))) == 1
+
+
+def test_store_update_deletes_tags_that_are_no_longer_used(clear_db, notes_cursor):
+    clear_db()
+
+    with notes_store_session() as store:
+        store.update_note({'id': '42', 'tag': ['foo']})
+        store.update_note({'id': '42', 'tag': []})
+
+    assert len(list(notes_cursor().execute('SELECT * FROM tags'))) == 0
