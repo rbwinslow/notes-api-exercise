@@ -1,0 +1,10 @@
+CREATE
+{ "id": "12345678", "tag": ["alfa","bravo"], "content": "Hello World" }
+UPDATE
+{ "id": "12345678", "tag": ["grocery"], "content": "Buy Bread" }
+SEARCH
+Bread
+SEARCH
+tag:grocery
+DELETE
+12345678
